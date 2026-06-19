@@ -1,8 +1,7 @@
 import logging
 import os
 import requests
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
+from homeassistant.components.http import StaticPathConfig
 
 _LOGGER = logging.getLogger(__name__)
 DOMAIN = "maintainx"
@@ -11,16 +10,15 @@ async def async_setup_entry(hass, entry):
     """Set up MaintainX from a config entry."""
     config_data = entry.data
 
-    # 🚀 AUTOMATIC CARD REGISTRATION
-    # This maps the internal custom_components path to a public URL route
+    # ? SECURE ASYNC CARD REGISTRATION (HA 2024.7+ Compliant)
+    # This maps the internal custom_components path to a public URL route asynchronously
     card_path = hass.config.path("custom_components/maintainx/dist/maintainx-card.js")
+    
     if os.path.exists(card_path):
-        hass.http.register_static_path(
-            "/maintainx/maintainx-card.js",
-            card_path,
-            cache_headers=False
-        )
-        _LOGGER.info("Successfully registered MaintainX dashboard card at /maintainx/maintainx-card.js")
+        await hass.http.async_register_static_paths([
+            StaticPathConfig("/maintainx/maintainx-card.js", card_path, False)
+        ])
+        _LOGGER.info("Successfully registered MaintainX dashboard card asynchronously at /maintainx/maintainx-card.js")
     else:
         _LOGGER.warning(f"Could not find card file at {card_path}")
 
@@ -36,7 +34,7 @@ async def async_setup_entry(hass, entry):
                 "Content-Type": "application/json"
             }
             payload = {"title": title, "description": description}
-            requests.post("[https://api.getmaintainx.com/v1/workorders](https://api.getmaintainx.com/v1/workorders)", json=payload, headers=headers)
+            requests.post("https://api.getmaintainx.com/v1/workorders", json=payload, headers=headers)
 
         # Option 2: URL Setup
         elif "portal_url" in config_data:
@@ -47,10 +45,10 @@ async def async_setup_entry(hass, entry):
         elif "username" in config_data:
             session = requests.Session()
             login_data = {"email": config_data["username"], "password": config_data["password"]}
-            login_ref = session.post("[https://api.getmaintainx.com/v1/auth/login](https://api.getmaintainx.com/v1/auth/login)", json=login_data)
+            login_ref = session.post("https://api.getmaintainx.com/v1/auth/login", json=login_data)
             if login_ref.status_code == 200:
                 payload = {"title": title, "description": description}
-                session.post("[https://api.getmaintainx.com/v1/workorders](https://api.getmaintainx.com/v1/workorders)", json=payload)
+                session.post("https://api.getmaintainx.com/v1/workorders", json=payload)
 
     hass.services.register(DOMAIN, "create_work_order", handle_create_work_order)
     return True
