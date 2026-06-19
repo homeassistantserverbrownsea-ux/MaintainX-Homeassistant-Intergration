@@ -50,5 +50,8 @@ async def async_setup_entry(hass, entry):
                 payload = {"title": title, "description": description}
                 session.post("https://api.getmaintainx.com/v1/workorders", json=payload)
 
-    hass.services.register(DOMAIN, "create_work_order", handle_create_work_order)
+    # Register service by scheduling it outside the async context
+    hass.loop.call_soon_threadsafe(
+        hass.services.register, DOMAIN, "create_work_order", handle_create_work_order
+    )
     return True
