@@ -34,7 +34,7 @@ class MaintainXWorkOrderCountSensor(SensorEntity):
     def state(self):
         return self._state
     
-    async def async_update(self):
+    async def async_update(self): 
         """Fetch work order count from API."""
         try:
             headers = {"Authorization": f"Bearer {self.config_data['api_key']}"}
