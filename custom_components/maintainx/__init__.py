@@ -15,10 +15,16 @@ async def async_setup_entry(hass, entry):
     card_path = hass.config.path("custom_components/maintainx/dist/maintainx-card.js")
     
     if os.path.exists(card_path):
-        await hass.http.async_register_static_paths([
-            StaticPathConfig("/maintainx/maintainx-card.js", card_path, False)
-        ])
-        _LOGGER.info("Successfully registered MaintainX dashboard card asynchronously at /maintainx/maintainx-card.js")
+        try:
+            await hass.http.async_register_static_paths([
+                StaticPathConfig("/maintainx/maintainx-card.js", card_path, False)
+            ])
+            _LOGGER.info("Successfully registered MaintainX dashboard card asynchronously at /maintainx/maintainx-card.js")
+        except RuntimeError as e:
+            if "already registered" in str(e):
+                _LOGGER.debug("MaintainX dashboard card route already registered, skipping")
+            else:
+                raise
     else:
         _LOGGER.warning(f"Could not find card file at {card_path}")
 
